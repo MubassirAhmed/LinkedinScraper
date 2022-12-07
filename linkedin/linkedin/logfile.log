@@ -1,0 +1,2 @@
+2022-11-05 00:42:44 [scrapy.utils.log] INFO: Scrapy 2.6.2 started (bot: linkedin)
+2022-11-05 00:42:44 [scrapy.utils.log] INFO: Versions: lxml 4.9.1.0, libxml2 2.9.4, cssselect 1.1.0, parsel 1.6.0, w3lib 2.0.1, Twisted 22.4.0, Python 3.10.6 (main, Aug 30 2022, 05:12:36) [Clang 13.1.6 (clang-1316.0.21.2.5)], pyOpenSSL 22.0.0 (OpenSSL 3.0.5 5 Jul 2022), cryptography 37.0.4, Platform macOS-12.5.1-x86_64-i386-64bit

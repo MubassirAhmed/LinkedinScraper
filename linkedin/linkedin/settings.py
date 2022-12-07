@@ -12,19 +12,38 @@ BOT_NAME = 'linkedin'
 SPIDER_MODULES = ['linkedin.spiders']
 NEWSPIDER_MODULE = 'linkedin.spiders'
 
-LOG_ENABLED = True
-LOG_LEVEL = 'DEBUG' # Levels: CRITICAL, ERROR, WARNING, INFO, DEBUG
-LOG_FILE = 'logfile.log'
+#LOG_ENABLED = True
+#LOG_LEVEL = 'INFO' # Levels: CRITICAL, ERROR, WARNING, INFO, DEBUG
+#LOG_FILE = 'logfile.log'
 
-#SPLASH_URL = 'http://192.168.59.103:8050' 
+#SPLASH_URL = 'http://192.168.59.103:8050'
 
-#DOWNLOADER_MIDDLEWARES = {
-#    'scrapyjs.SplashMiddleware': 725,
-#}
+DOWNLOADER_MIDDLEWARES = {
+    #'scrapyjs.SplashMiddleware': 725,
+    'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+    'scrapy.downloadermiddlewares.retry.RetryMiddleware': None,
+    'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,
+    'scrapy_fake_useragent.middleware.RetryUserAgentMiddleware': 401,
+    #'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+    #'rotating_proxies.middlewares.BanDetectionMiddleware': 620
+}
+
+#ROTATING_PROXY_LIST = [
+#    'proxy1.com:8000',
+#   'proxy2.com:8031',
+#    'proxy3.com:8032',
+#]
+
+
+FAKEUSERAGENT_PROVIDERS = [
+    'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # This is the first provider we'll try
+    'scrapy_fake_useragent.providers.FakerProvider',  # If FakeUserAgentProvider fails, we'll use faker to generate a user-agent string for us
+    'scrapy_fake_useragent.providers.FixedUserAgentProvider',  # Fall back to USER_AGENT value
+]
 
 #DUPEFILTER_CLASS = 'scrapyjs.SplashAwareDupeFilter'
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
-#USER_AGENT = 'linkedin (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
