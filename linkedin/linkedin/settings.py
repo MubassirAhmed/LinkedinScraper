@@ -8,16 +8,12 @@
 #     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 BOT_NAME = 'linkedin'
-
 SPIDER_MODULES = ['linkedin.spiders']
 NEWSPIDER_MODULE = 'linkedin.spiders'
-
-#LOG_ENABLED = True
-#LOG_LEVEL = 'INFO' # Levels: CRITICAL, ERROR, WARNING, INFO, DEBUG
-#LOG_FILE = 'logfile.log'
-
+#LOG_ENABLED = False
+#LOG_LEVEL = 'ERROR' # Levels: CRITICAL, ERROR, WARNING, INFO, DEBUG
+#LOG_FILE = 'logfile_%(time)s.log'
 #SPLASH_URL = 'http://192.168.59.103:8050'
-
 DOWNLOADER_MIDDLEWARES = {
     #'scrapyjs.SplashMiddleware': 725,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
@@ -29,11 +25,8 @@ DOWNLOADER_MIDDLEWARES = {
     # 'scrapy_proxy_pool.middlewares.ProxyPoolMiddleware': 610,
     # 'scrapy_proxy_pool.middlewares.BanDetectionMiddleware': 620,
 }
-
 PROXY_POOL_ENABLED = True
-
 ROTATING_PROXY_LIST = [
-    
 '45.224.255.126:9692',
 '192.3.48.176:6169',
 '154.85.100.80:5121',
@@ -84,7 +77,8 @@ ROTATING_PROXY_LIST = [
 '154.92.122.235:5305',
 '23.250.83.161:6170',
 '91.214.65.189:6036',
-'216.173.111.59:6769',
+'216.173.111.59:6769',]
+"""
 '67.227.110.44:6602',
 '185.230.47.78:6001',
 '176.116.231.33:7375',
@@ -284,7 +278,8 @@ ROTATING_PROXY_LIST = [
 '45.192.146.74:6085',
 '161.123.151.228:6212',
 '104.223.223.155:6740'    
-    
+] 
+"""   
 # '185.199.229.156:7492',
 # '185.199.228.220:7300',
 # '185.199.231.45:8382',
@@ -306,9 +301,7 @@ ROTATING_PROXY_LIST = [
 # '154.95.36.199:6893',
 # '45.94.47.66:8110',
 # '144.168.217.88:8780',
-
-]
-
+#]
 
 FAKEUSERAGENT_PROVIDERS = [
     'scrapy_fake_useragent.providers.FakeUserAgentProvider',  # This is the first provider we'll try
@@ -323,6 +316,12 @@ USER_AGENT = 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
+#FEEDS = {
+#    "s3://linkedin-scraper-1/%(name)s/%(name)s_%(time)s.csv": {"format": "csv",}
+#}
+
+AWS_ACCESS_KEY_ID = 'AKIAYUJWZRTZRRGQ3JVV'
+AWS_SECRET_ACCESS_KEY = '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'
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -330,9 +329,9 @@ ROBOTSTXT_OBEY = False
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = 2
+DOWNLOAD_DELAY = 5
 # The download delay setting will honor only one of:
-#CONCURRENT_REQUESTS_PER_DOMAIN = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 1#16
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
@@ -375,12 +374,12 @@ ROBOTSTXT_OBEY = False
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
 AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-#AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
-#AUTOTHROTTLE_MAX_DELAY = 60
+AUTOTHROTTLE_MAX_DELAY = 200
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 0.2
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
 
