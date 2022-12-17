@@ -1,5 +1,5 @@
 from common.base import session
-from common.tables import PprRawAll, PprCleanAll
+from common.schema import PprRawAll, PprCleanAll
 
 from sqlalchemy import cast, Integer, Date
 from sqlalchemy.dialects.postgresql import insert

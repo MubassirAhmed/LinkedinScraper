@@ -1,8 +1,7 @@
 import os
 import csv
 from datetime import datetime
-
-from common.tables import PprRawAll
+from common.schema import PprRawAll
 from common.base import session
 from sqlalchemy import text
 
@@ -47,7 +46,8 @@ def update_price(price_input):
     """
     Return price as integer by removing:
     - "€" symbol
-    - "," to convert the number into float first (e.g. from "€100,000.00" to "100000.00")
+    - "," to convert the number into float first (e.g. from "€100,000.00" to 
+    "100000.00")
     """
     price_input = price_input.replace("€", "")
     price_input = float(price_input.replace(",", ""))
@@ -55,17 +55,20 @@ def update_price(price_input):
 
 def truncate_table():
     """
-    Ensure that "ppr_raw_all" table is always in empty state before running any transformations.
+    Ensure that "ppr_raw_all" table is always in empty state before running any 
+    transformations.
     And primary key (id) restarts from 1.
     """
     session.execute(
-        text("TRUNCATE TABLE ppr_raw_all;ALTER SEQUENCE ppr_raw_all_id_seq RESTART;")
+        text("TRUNCATE TABLE ppr_raw_all;   \
+             ALTER SEQUENCE ppr_raw_all_id_seq RESTART;")
     )
     session.commit()
 
 def transform_new_data():
     """
-    Apply all transformations for each row in the .csv file before saving it into database
+    Apply all transformations for each row in the .csv file before saving it 
+    into database
     """
     with open(raw_path, mode="r", encoding="windows-1252") as csv_file:
         # Read the new CSV snapshot ready to be processed
