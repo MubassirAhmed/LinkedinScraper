@@ -16,12 +16,67 @@ class linkedinSpider(scrapy.Spider):
 
     
     def start_requests(self):              
-        feederURL = 'https://www.linkedin.com/jobs/search/?currentJobId=3461656172&f_TPR=r86400&geoId=101174742&keywords=%22analyst%22%20AND%20(%22python%22%20OR%20%22sql%22)&location=Canada&refresh=true'   
-        for i in range(0, 25, 25):
-            yield scrapy.Request(url=feederURL.replace("/jobs/",
-                                    "/jobs-guest/jobs/api/seeMoreJobPostings/") 
-                                    + "&start={}".format(i),
-                                callback=self.after_fetch)
+        #past 24 hrs
+        analyticsANDsql = 'https://www.linkedin.com/jobs/search/?currentJobId=3467060936&f_TPR=r86400&geoId=101174742&keywords=analytics%20and%20sql&location=Canada&refresh=true'
+
+        analystAND_sqlORpython_ = 'https://www.linkedin.com/jobs/search?keywords=Analyst%20And%20%28sql%20Or%20Python%29&location=Canada&locationId=&geoId=101174742&sortBy=R&f_TPR=r86400&position=1&pageNum=0'
+
+        #!Initial loading
+        #past week
+
+        #analystAND_sqlORpython
+        canada_pastWeek = 'https://www.linkedin.com/jobs/search?keywords=Analyst%20And%20%28sql%20Or%20Python%29&location=Canada&locationId=&geoId=101174742&f_TPR=r604800&position=1&pageNum=0'
+        
+        #analytics_andSQL_notIntern 'analytics' returns wayy more results so I'm splitting it into provinces
+
+        novaScotia_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql&location=nova%20scotia&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+        ontario_pastWeek = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql%20NOT%20Intern&location=Ontario%2C%20Canada&locationId=&geoId=105149290&sortBy=R&f_TPR=r604800&position=1&pageNum=0'
+
+        alberta_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql%20NOT%20Intern&location=Alberta&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+        manitoba_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql%20NOT%20Intern&location=Manitoba&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+        saskatchewan_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql%20NOT%20Intern&location=Saskatchewan&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+        BC_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20Sql%20NOT%20Intern&location=British%20Columbia&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+        Quebec_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20python%20NOT%20Intern&location=Quebec&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+
+        #TODO : 
+        #? Scraper Stuff:
+        #? add no.ofApps, and timePosted to the results/json
+        """ #? improve consistency, check error.log in spiders folder for 
+        the last real (i.e., not test) run """        
+        
+        #? Figure out how to analyse this in jupyter notebooks
+        #? common key-words
+        #? filter by less apps to more apps
+        #? do analysis dashboards like the ones the fiver guys had
+        feederURLs = [canada_pastWeek,novaScotia_anyTime,]
+                      # ontario_pastWeek,alberta_anyTime,
+                      # manitoba_anyTime,saskatchewan_anyTime,
+                      # BC_anyTime,Quebec_anyTime]
+                    
+        for feederURL in feederURLs: 
+
+            totalJobs = int(TextResponse(body=requests.get(feederURL).content, url=feederURL).css('span.results-context-header__job-count::text').get().replace('+','').replace(',',''))
+
+            """if there are 402 jobs, the page will load if you pass '400' 
+            as the parameter, but not '425'. However, it loads if you put '402',
+            so this way you can get the last few jobs. You can put a second 
+            for loop just for those last few, but you may need another parse func 
+            for that."""
+            
+            # totalJobs = 600
+            for i in range(0, totalJobs, 25):
+                yield scrapy.Request(url=feederURL.replace("/jobs/",
+                                        "/jobs-guest/jobs/api/seeMoreJobPostings/") 
+                                        + "&start={}".format(i),
+                                    callback=self.after_fetch)
+            # remove to loop over feederURLs
+            # break
         
 
     def after_fetch(self, response):
