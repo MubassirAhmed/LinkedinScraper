@@ -2,68 +2,26 @@ import scrapy
 from scrapy.http import TextResponse
 import requests
 import re
+#from fake_useragent import UserAgent
+#from selenium import webdriver
+#import time 
 
 class linkedinSpider(scrapy.Spider):
     
     name = "linkedin"
     
-    custom_settings = {
-        'FEEDS': { "s3://linkedin-scraper-1/%(name)s/%(name)s_%(time)s.csv" : {"format": "csv"} }
-    }
+    # custom_settings = {
+    #     'FEEDS': { "s3://linkedin-scraper-1/%(name)s/%(name)s_%(time)s.csv" : {"format": "csv"} }
+    # }
 
     
     def start_requests(self):              
-        #? Real Jobs
-        SQL_RemoteCanada_24hrs ='https://ca.linkedin.com/jobs/search?keywords=SQL&location=Canada&locationId=&geoId=101174742&f_TPR=r86400&f_WT=2&position=1&pageNum=0'
-        SQL_Toronto_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=SQL&location=Toronto%2C%20Ontario%2C%20Canada&locationId=&geoId=100761630&f_TPR=r86400&distance=25&position=1&pageNum=0'
-        Python_RemoteCanada_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=Python&location=Canada&locationId=&geoId=101174742&f_TPR=r86400&f_WT=2&position=1&pageNum=0'
-        Python_Toronto_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=Python&location=Toronto%2C%20Ontario%2C%20Canada&locationId=&geoId=100025096&f_TPR=r86400&position=1&pageNum=0'
-        Econ_RemoteCanada_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=Economics&location=Canada&locationId=&geoId=101174742&f_TPR=&f_WT=2&position=1&pageNum=0'
-        Econ_Toronto_24hrs ='https://ca.linkedin.com/jobs/search?keywords=Economics&location=Toronto%2C%20Ontario%2C%20Canada&locationId=&geoId=100025096&f_TPR=r86400&position=1&pageNum=0'
-        SQL_RemoteUS_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=Sql&location=United%20States&locationId=&geoId=103644278&f_TPR=r86400&f_WT=2&f_E=2&position=1&pageNum=0'
-        
-        #? Any Jobs
-        #'support','associate','specialist'
-        Entry_RemoteCanada_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=&location=Canada&locationId=&geoId=101174742&f_TPR=r86400&f_E=2&f_WT=2&position=1&pageNum=0'
-        Any_Any_RemoteCanada_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=&location=Canada&locationId=&geoId=101174742&f_TPR=r86400&f_WT=2&position=1&pageNum=0'
-        
-        _Any_Entry_AnyToronto_24hrs = 'x'
-        Any_Any_AnyToronto_24hrs = 'https://ca.linkedin.com/jobs/search?keywords=&location=Toronto%2C%20Ontario%2C%20Canada&locationId=&geoId=100025096&f_TPR=r86400&position=1&pageNum=0'
-
-        #TODO : 
-        #? Scraper Stuff:
-        #? add no.ofApps, and timePosted to the results/json
-        """ #? improve consistency, check error.log in spiders folder for 
-        the last real (i.e., not test) run """        
-        
-        #? Figure out how to analyse this in jupyter notebooks
-        #? common key-words
-        #? filter by less apps to more apps
-        #? do analysis dashboards like the ones the fiver guys had
-        feederURLs = [SQL_RemoteCanada_24hrs,SQL_Toronto_24hrs,
-                      Python_RemoteCanada_24hrs,Python_Toronto_24hrs,
-                      Econ_RemoteCanada_24hrs,Econ_Toronto_24hrs,
-                      SQL_RemoteUS_24hrs]
-        #feederURL = SQL_RemoteCanada_24hrs    
-                    
-        for feederURL in feederURLs: 
-            totalJobs = int(TextResponse(body=requests.get(feederURL)\
-                .content, url=feederURL)\
-                .css('span.results-context-header__new-jobs::text')\
-                .get().strip().replace("\xa0new",'').replace("(","")\
-                .replace(',','').replace(')',''))
-
-            """if there are 402 jobs, the page will load if you pass '400' 
-            as the parameter, but not '425'. However, it loads if you put '402',
-            so this way you can get the last few jobs. You can put a second 
-            for loop just for those last few, but you may need another parse func 
-            for that."""
-            
-            for i in range(0, totalJobs, 25):
-                yield scrapy.Request(url=feederURL.replace("/jobs/",
-                                        "/jobs-guest/jobs/api/seeMoreJobPostings/") 
-                                        + "&start={}".format(i),
-                                    callback=self.after_fetch)
+        feederURL = 'https://www.linkedin.com/jobs/search/?currentJobId=3461656172&f_TPR=r86400&geoId=101174742&keywords=%22analyst%22%20AND%20(%22python%22%20OR%20%22sql%22)&location=Canada&refresh=true'   
+        for i in range(0, 25, 25):
+            yield scrapy.Request(url=feederURL.replace("/jobs/",
+                                    "/jobs-guest/jobs/api/seeMoreJobPostings/") 
+                                    + "&start={}".format(i),
+                                callback=self.after_fetch)
         
 
     def after_fetch(self, response):
@@ -74,45 +32,85 @@ class linkedinSpider(scrapy.Spider):
                                   callback=self.parse) 
 
     def parse(self, response, **kwargs):
-        postedTimeAgo =  response.css('span.posted-time-ago__text::text')\
-            .get().strip().lower()
+        postedTimeAgo =  response.css('span.posted-time-ago__text::text').get().strip().lower()
         if any(word in postedTimeAgo for word in ['hour','hours']):
-            postedTimeAgo = int(postedTimeAgo.replace("hours ago",'')\
-            .replace("hour ago",'').strip())
+            postedTimeAgo = int(postedTimeAgo.replace("hours ago",'').replace("hour ago",'').strip())
         else:
             if any(word in postedTimeAgo for word in ['minutes','minute']):
-                postedTimeAgo = int(postedTimeAgo.replace("minute ago",'')\
-                .replace("minutes ago",'').strip())/60
+                postedTimeAgo = int(int(postedTimeAgo.replace("minute ago",'').replace("minutes ago",'').strip())/60)
             else: 
                 if any(word in postedTimeAgo for word in ['day','days']):
-                    postedTimeAgo = int(postedTimeAgo.replace("day ago",'')\
-                    .replace("days ago",'').strip())*24
+                    postedTimeAgo = int(postedTimeAgo.replace("day ago",'').replace("days ago",'').strip())*24
                     
-        noApplicants = response.css('.num-applicants__caption::text').get()\
-            .strip().lower()
+        noApplicants = response.css('.num-applicants__caption::text').get().strip().lower()
         if 'among' in noApplicants:
             noApplicants = 0
         else:
-            noApplicants = int(noApplicants.replace("applicants",'')\
-                .replace("over",''))   
+            noApplicants = int(noApplicants.replace("applicants",'').replace("over",''))   
             
-        appsPerHr = noApplicants/postedTimeAgo
-        clean_desc = " ".join(response\
-            .css('div.show-more-less-html__markup ::text')\
-            .extract()).strip().lower()  
-        clean_title = response.css('h1.topcard__title::text').get().strip()\
-            .lower()
-        clean_company = response.css('a.topcard__org-name-link::text').get()\
-            .strip().lower()
-        clean_type_of_job = response\
-            .css('span.description__job-criteria-text::text').get().strip()\
-            .lower()
+        # appsPerHr = noApplicants/postedTimeAgo
+        clean_title = response.css('h1.topcard__title::text').get().strip().lower()
+        clean_company = response.css('a.topcard__org-name-link::text').get().strip().lower()
+    
+        jobMetaData = len(response.css('span.description__job-criteria-text::text').getall())
+        if jobMetaData >= 1:
+            clean_seniority_level = response.css('span.description__job-criteria-text::text').getall()[0].strip().lower()
+        else:
+            clean_seniority_level = 'n/a'
+        if jobMetaData >= 2:
+            clean_employment_type = response.css('span.description__job-criteria-text::text').getall()[1].strip().lower()
+        else:
+            clean_employment_type = 'n/a'
+
+        if jobMetaData >= 3:
+            clean_job_function = response.css('span.description__job-criteria-text::text').getall()[2].strip().lower()
+        else:
+            clean_job_function = 'n/a'
+
+        if jobMetaData >= 4:
+            clean_industry = response.css('span.description__job-criteria-text::text').getall()[3].strip().lower()
+        else:
+            clean_industry = 'n/a'
+
         job_link = response.request.url
+        clean_desc = " ".join(response.css('div.show-more-less-html__markup ::text').extract()).strip().lower()  
         job_id = int(re.findall("\d{10}",job_link)[0])
         
-        yield {'title': clean_title, 'appsPerHour': appsPerHr, 
-               'noApplicants': noApplicants,'postedTimeAgo':postedTimeAgo,
-                'company': clean_company,'job_link': job_link,
-                'description': clean_desc, 'typeOfJob': clean_type_of_job,
-                'job_id': job_id
+
+        company_link = response.css('a.topcard__org-name-link::attr(href)').get().replace('?trk=public_jobs_topcard-org-name','/?originalSubdomain=ca')
+        
+#   #     yield response.follow(url=company_link,
+    #                           headers = {
+    #                               "accept" : "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    #                               "accept-encoding" : "gzip, deflate, sdch, br",
+    #                               "accept-language" : "en-US,en;q=0.8,ms;q=0.6",
+    #                               "user-agent" : "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+    #                            },
+    #                          callback=self.parse_company)
+    #    #ua = UserAgent(verify_ssl=False)
+        #user_agent = ua.random
+        #chrome_options = webdriver.ChromeOptions()
+        #chrome_options.add_argument("user-agent=" + user_agent)
+        #driver = webdriver.Chrome(chrome_options=chrome_options)
+        #driver.get(company_link)
+        #time.sleep(1)
+
+
+        yield {'title': clean_title, 
+               #'appsPerHour': appsPerHr,
+               'noApplicants': noApplicants,
+               'postedTimeAgo':postedTimeAgo,
+               'company': clean_company,
+               'job_link': job_link,
+               'description': clean_desc,
+               'seniorityLevel':clean_seniority_level,
+               'employmentType':clean_employment_type,
+               'jobFunction':clean_job_function,
+               'industry':clean_industry,
+               'job_id': job_id
                 }
+
+    def parse_company(self,response):
+        yield{'company_industry': response.css('h2.top-card-layout__headline::text').get().strip().lower()}
+            
+
