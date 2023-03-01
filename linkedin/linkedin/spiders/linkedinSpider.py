@@ -43,7 +43,43 @@ class linkedinSpider(scrapy.Spider):
 
         Quebec_anyTime = 'https://www.linkedin.com/jobs/search?keywords=Analytics%20AND%20python%20NOT%20Intern&location=Quebec&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
 
+        AD_HOC = 'https://www.linkedin.com/jobs/search/?currentJobId=3482844494&f_TPR=r604800&geoId=101174742&keywords=%22sql%22%20or%20%22python%22&location=Canada&refresh=true&sortBy=R'
 
+        economics ='https://www.linkedin.com/jobs/search?keywords=%22analyst%22%2Band%2B%22economics%22&location=Canada&geoId=101174742&trk=public_jobs_jobs-search-bar_search-submit&currentJobId=3313052700&position=1&pageNum=0'
+
+        analyst_or_sql_past_week = 'https://www.linkedin.com/jobs/search?keywords=%22analyst%22%2BAnd%2B%22sql%22&location=Canada&geoId=101174742&f_TPR=r604800&currentJobId=3493934649&position=2&pageNum=0'
+        new ='https://www.linkedin.com/jobs/search?keywords=Underwriting&location=Canada&geoId=101174742&f_TPR=r604800&currentJobId=3494387464&position=13&pageNum=0'
+
+
+        #################################################################
+        #################################################################
+
+
+        keywords = ['Underwriting']
+        #provinces = ['Nova%20Scotia', 'Ontario', 'Quebec', 'Alberta', 'Manitoba','Saskatchewan','British%20Columbia', 'New%20Brunswick', 'Prince%20Edward%20Island', 'Newfoundland%20and%20Labrador']
+        provinces = ['Nova%20Scotia', 'Alberta', 'Manitoba','Saskatchewan','New%20Brunswick']
+        
+        for keyword in keywords:
+            for province in provinces:
+                feederURL = f'https://www.linkedin.com/jobs/search?keywords={keyword}&location={province}&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+
+                totalJobs = int(TextResponse(body=requests.get(feederURL).content, url=feederURL).css('span.results-context-header__job-count::text').get().replace('+','').replace(',',''))
+
+                """if there are 402 jobs, the page will load if you pass '400' 
+                as the parameter, but not '425'. However, it loads if you put '402',
+                so this way you can get the last few jobs. You can put a second 
+                for loop just for those last few, but you may need another parse func 
+                for that."""
+                
+                totalJobs = 25
+                for i in range(0, totalJobs, 25):
+                    yield scrapy.Request(url=feederURL.replace("/jobs/",
+                                            "/jobs-guest/jobs/api/seeMoreJobPostings/") 
+                                            + "&start={}".format(i),
+                                        callback=self.after_fetch,
+                                        meta={'province': province.replace("%20"," ")})
+                # remove to loop over feederURLs
+                break
         #TODO : 
         #? Scraper Stuff:
         #? add no.ofApps, and timePosted to the results/json
@@ -54,37 +90,26 @@ class linkedinSpider(scrapy.Spider):
         #? common key-words
         #? filter by less apps to more apps
         #? do analysis dashboards like the ones the fiver guys had
-        feederURLs = [canada_pastWeek,novaScotia_anyTime,]
+        
+        #feederURLs = [economics, analyst_or_sql_past_week]
+                    #canada_pastWeek,novaScotia_anyTime,]
                       # ontario_pastWeek,alberta_anyTime,
                       # manitoba_anyTime,saskatchewan_anyTime,
                       # BC_anyTime,Quebec_anyTime]
                     
-        for feederURL in feederURLs: 
+        #for feederURL in feederURLs: 
 
-            totalJobs = int(TextResponse(body=requests.get(feederURL).content, url=feederURL).css('span.results-context-header__job-count::text').get().replace('+','').replace(',',''))
-
-            """if there are 402 jobs, the page will load if you pass '400' 
-            as the parameter, but not '425'. However, it loads if you put '402',
-            so this way you can get the last few jobs. You can put a second 
-            for loop just for those last few, but you may need another parse func 
-            for that."""
-            
-            # totalJobs = 600
-            for i in range(0, totalJobs, 25):
-                yield scrapy.Request(url=feederURL.replace("/jobs/",
-                                        "/jobs-guest/jobs/api/seeMoreJobPostings/") 
-                                        + "&start={}".format(i),
-                                    callback=self.after_fetch)
-            # remove to loop over feederURLs
-            # break
+                
         
 
     def after_fetch(self, response):
         job_link = response.css('a.base-card__full-link::attr(href)').extract()
 
+        province = response.meta['province']
         for link in job_link:
             yield response.follow(url=link,
-                                  callback=self.parse) 
+                                  callback=self.parse,
+                                  meta={'province' : province }) 
 
     def parse(self, response, **kwargs):
         postedTimeAgo =  response.css('span.posted-time-ago__text::text').get().strip().lower()
@@ -162,7 +187,8 @@ class linkedinSpider(scrapy.Spider):
                'employmentType':clean_employment_type,
                'jobFunction':clean_job_function,
                'industry':clean_industry,
-               'job_id': job_id
+               'job_id': job_id,
+               'province': response.meta['province'],
                 }
 
     def parse_company(self,response):
