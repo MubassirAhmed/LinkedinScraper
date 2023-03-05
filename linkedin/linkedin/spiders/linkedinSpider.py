@@ -50,28 +50,26 @@ class linkedinSpider(scrapy.Spider):
         analyst_or_sql_past_week = 'https://www.linkedin.com/jobs/search?keywords=%22analyst%22%2BAnd%2B%22sql%22&location=Canada&geoId=101174742&f_TPR=r604800&currentJobId=3493934649&position=2&pageNum=0'
         new ='https://www.linkedin.com/jobs/search?keywords=Underwriting&location=Canada&geoId=101174742&f_TPR=r604800&currentJobId=3494387464&position=13&pageNum=0'
 
-
         #################################################################
-        #################################################################
+        ########################Weekly#########################################
 
 
-        keywords = ['Underwriting']
-        #provinces = ['Nova%20Scotia', 'Ontario', 'Quebec', 'Alberta', 'Manitoba','Saskatchewan','British%20Columbia', 'New%20Brunswick', 'Prince%20Edward%20Island', 'Newfoundland%20and%20Labrador']
-        provinces = ['Nova%20Scotia', 'Alberta', 'Manitoba','Saskatchewan','New%20Brunswick']
+        keywords = ["excel"]
+        provinces = ['Nova Scotia', 'Manitoba','Saskatchewan', 'New Brunswick', 'Prince Edward Island', 'Newfoundland and Labrador', 'Ontario', 'Quebec', 'Alberta', 'British Columbia']
+        #provinces = ['Prince%20Edward%20Island','Newfoundland%20and%20Labrador','New%20Brunswick','Saskatchewan']
         
-        for keyword in keywords:
-            for province in provinces:
-                feederURL = f'https://www.linkedin.com/jobs/search?keywords={keyword}&location={province}&geoId=&trk=public_jobs_jobs-search-bar_search-submit&position=1&pageNum=0'
+        time = {'week' : 'r604800', 'month' : 'r2592000' }
 
+        geoIds = ['104823201', '104423466', '104002611', '103790618',
+                  '104663945', '106199678','105149290', '102237789', '103564821','102044150']
+
+        for keyword in keywords:
+            for index, province in enumerate(provinces):
+                feederURL = 'https://www.linkedin.com/jobs/search?keywords={}&location={}%2C%20Canada&geoId={}&f_TPR={}&position=1&pageNum=0'.format(keyword.replace(" ","%20").replace("\"","%22"), province, geoIds[index], time["month"])
+                
                 totalJobs = int(TextResponse(body=requests.get(feederURL).content, url=feederURL).css('span.results-context-header__job-count::text').get().replace('+','').replace(',',''))
 
-                """if there are 402 jobs, the page will load if you pass '400' 
-                as the parameter, but not '425'. However, it loads if you put '402',
-                so this way you can get the last few jobs. You can put a second 
-                for loop just for those last few, but you may need another parse func 
-                for that."""
-                
-                totalJobs = 25
+                #totalJobs = 25
                 for i in range(0, totalJobs, 25):
                     yield scrapy.Request(url=feederURL.replace("/jobs/",
                                             "/jobs-guest/jobs/api/seeMoreJobPostings/") 
@@ -79,37 +77,30 @@ class linkedinSpider(scrapy.Spider):
                                         callback=self.after_fetch,
                                         meta={'province': province.replace("%20"," ")})
                 # remove to loop over feederURLs
-                break
-        #TODO : 
-        #? Scraper Stuff:
-        #? add no.ofApps, and timePosted to the results/json
-        """ #? improve consistency, check error.log in spiders folder for 
-        the last real (i.e., not test) run """        
-        
-        #? Figure out how to analyse this in jupyter notebooks
-        #? common key-words
-        #? filter by less apps to more apps
-        #? do analysis dashboards like the ones the fiver guys had
-        
-        #feederURLs = [economics, analyst_or_sql_past_week]
-                    #canada_pastWeek,novaScotia_anyTime,]
-                      # ontario_pastWeek,alberta_anyTime,
-                      # manitoba_anyTime,saskatchewan_anyTime,
-                      # BC_anyTime,Quebec_anyTime]
-                    
-        #for feederURL in feederURLs: 
+                #break
 
+
+        # feederURL = 'https://www.linkedin.com/jobs/search?keywords=Excel%20Or%20Degree&location=Toronto%2C%20Ontario%2C%20Canada&locationId=&geoId=100761630&f_TPR=r604800&distance=10&position=1&pageNum=0'
                 
-        
+        # totalJobs = int(TextResponse(body=requests.get(feederURL).content, url=feederURL).css('span.results-context-header__job-count::text').get().replace('+','').replace(',',''))
+
+        # #totalJobs = 25
+        # for i in range(0, totalJobs, 25):
+        #     yield scrapy.Request(url=feederURL.replace("/jobs/",
+        #                             "/jobs-guest/jobs/api/seeMoreJobPostings/") 
+        #                             + "&start={}".format(i),
+        #                         callback=self.after_fetch,)
+                                #meta={'province': province.replace("%20"," ")})
+        # remove to loop over feederURLs
+        #break
 
     def after_fetch(self, response):
         job_link = response.css('a.base-card__full-link::attr(href)').extract()
 
-        province = response.meta['province']
         for link in job_link:
             yield response.follow(url=link,
-                                  callback=self.parse,
-                                  meta={'province' : province }) 
+                                  meta={'province' : response.meta['province']},
+                                  callback=self.parse) 
 
     def parse(self, response, **kwargs):
         postedTimeAgo =  response.css('span.posted-time-ago__text::text').get().strip().lower()
