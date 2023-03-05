@@ -143,9 +143,11 @@ class linkedinSpider(scrapy.Spider):
         else:
             clean_industry = 'n/a'
 
+        clean_city =  response.css('span.topcard__flavor.topcard__flavor--bullet::text').get().strip().lower().replace(',',"").split()[0]
+
         job_link = response.request.url
         clean_desc = " ".join(response.css('div.show-more-less-html__markup ::text').extract()).strip().lower()  
-        job_id = int(re.findall("\d{10}",job_link)[0])
+        job_id = clean_title + clean_company + clean_industry + clean_job_function
         
 
         company_link = response.css('a.topcard__org-name-link::attr(href)').get().replace('?trk=public_jobs_topcard-org-name','/?originalSubdomain=ca')
@@ -179,6 +181,7 @@ class linkedinSpider(scrapy.Spider):
                'jobFunction':clean_job_function,
                'industry':clean_industry,
                'job_id': job_id,
+               'city': clean_city,
                'province': response.meta['province'],
                 }
 
